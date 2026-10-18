@@ -18,10 +18,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * A Bandeira de Defesa. O bloco em si não guarda nada: quem controla o progresso,
- * as invasões e a persistência é o {@link DefenseManager}.
- */
+
 public class DefenseFlagBlock extends Block {
 	public static final MapCodec<DefenseFlagBlock> CODEC = simpleCodec(DefenseFlagBlock::new);
 	private static final VoxelShape SHAPE = Block.box(6.0, 0.0, 6.0, 10.0, 16.0, 10.0);
