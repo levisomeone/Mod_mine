@@ -35,20 +35,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Cérebro do mod: guarda as bandeiras, decide quando começa a invasão da noite,
- * controla a horda, os zumbis-bomba, as recompensas e salva o progresso.
- * Só funciona no Overworld.
- */
+
 public final class DefenseManager {
-	// ----- ajustes de balanceamento -----
-	/** Hora do dia (0-23999) a partir da qual a invasão pode começar (12700 = início da noite). */
+	// --balance ajust--
+	/** dia (0-23999) inicio (12700 = início da noite). */
 	private static final long RAID_START_TIME = 12700L;
-	/** Depois dessa hora, uma invasão nova não começa mais nessa noite. */
 	private static final long RAID_LAST_START_TIME = 22000L;
-	/** Distância máxima do jogador até a bandeira para a invasão acontecer. */
 	private static final double PLAYER_RANGE = 64.0;
-	/** Distância mínima entre duas bandeiras (evita empilhar bandeiras para farmar). */
 	private static final double MIN_FLAG_DISTANCE = 64.0;
 
 	private static DefenseManager instance;
@@ -70,7 +63,6 @@ public final class DefenseManager {
 		}
 	}
 
-	// ----- dados -----
 	private static final class Flag {
 		final BlockPos pos;
 		int nights;
@@ -112,7 +104,6 @@ public final class DefenseManager {
 		return tracked.contains(uuid);
 	}
 
-	// ------------------------------------------------------------------ persistência
 
 	private Path file() {
 		return server.getWorldPath(LevelResource.ROOT).resolve("nightdefense_flags.json");
@@ -150,9 +141,6 @@ public final class DefenseManager {
 		}
 	}
 
-	// ------------------------------------------------------------------ registro de bandeiras
-
-	/** @return mensagem de erro, ou null se a bandeira foi aceita. */
 	public String tryRegister(ServerLevel level, BlockPos pos) {
 		if (level != server.overworld()) {
 			return "A Bandeira de Defesa só funciona no Overworld.";
@@ -205,8 +193,7 @@ public final class DefenseManager {
 		}
 		return best;
 	}
-
-	// ------------------------------------------------------------------ comandos (teste)
+)
 
 	public String describeFlags() {
 		if (flags.isEmpty()) {
@@ -244,9 +231,7 @@ public final class DefenseManager {
 		return "Noites defendidas da bandeira em " + flag.pos.toShortString() + " agora: " + nights + ".";
 	}
 
-	// ------------------------------------------------------------------ loop principal
 
-	/** Chamado todo tick; o trabalho de verdade roda 1 vez por segundo. */
 	public void tick() {
 		ServerLevel level = server.overworld();
 		long gameTime = level.getGameTime();
@@ -267,7 +252,7 @@ public final class DefenseManager {
 
 	private void tickFlag(ServerLevel level, Flag flag) {
 		if (!level.hasChunkAt(flag.pos)) {
-			return; // chunk descarregado: pausa tudo
+			return;
 		}
 		if (!level.getBlockState(flag.pos).is(ModBlocks.DEFENSE_FLAG)) {
 			if (flag.raid != null) {
@@ -310,12 +295,11 @@ public final class DefenseManager {
 		Raid raid = flag.raid;
 		List<ServerPlayer> players = playersNear(level, flag.pos, PLAYER_RANGE);
 
-		// Amanheceu: a bandeira sobreviveu.
+
 		if (timeOfDay < 12000L) {
 			finishSuccess(level, flag, true);
 			return;
 		}
-		// Ninguém por perto: pausa (chunks podem estar descarregados). Desiste após 3 minutos.
 		if (players.isEmpty()) {
 			raid.pausedTicks += 20;
 			if (raid.pausedTicks > 20 * 180) {
@@ -326,7 +310,7 @@ public final class DefenseManager {
 		}
 		raid.pausedTicks = 0;
 
-		// Remove da lista quem morreu.
+
 		Iterator<UUID> it = raid.alive.iterator();
 		while (it.hasNext()) {
 			UUID id = it.next();
@@ -337,19 +321,17 @@ public final class DefenseManager {
 				raid.killed++;
 			}
 		}
-
-		// Spawna mais monstros (em levas, para não pesar).
+r).
 		int maxAlive = Math.min(8 + raid.night / 10, 20);
 		int spawnedNow = 0;
 		while (!raid.queue.isEmpty() && raid.alive.size() < maxAlive && spawnedNow < 4) {
 			RaidComposer.Spawn spawn = raid.queue.poll();
 			if (!spawnMob(level, flag, raid, spawn)) {
-				raid.total--; // sem lugar para nascer: descarta esse monstro
+				raid.total--; 
 			}
 			spawnedNow++;
 		}
 
-		// Monstros sem alvo caminham até a bandeira (onde você provavelmente está construindo).
 		Vec3 center = Vec3.atBottomCenterOf(flag.pos);
 		for (UUID id : raid.alive) {
 			if (!(level.getEntity(id) instanceof Mob mob)) {
@@ -361,7 +343,7 @@ public final class DefenseManager {
 			}
 		}
 
-		// Barra de status (action bar).
+.
 		int remaining = raid.alive.size() + raid.queue.size();
 		String bar = "§6Noite " + raid.night + " §8| §eInimigos restantes: " + remaining;
 		for (ServerPlayer player : players) {
@@ -373,12 +355,7 @@ public final class DefenseManager {
 		}
 	}
 
-	// ------------------------------------------------------------------ zumbis com TNT
 
-	/**
-	 * Zumbi-bomba: se estiver batendo de frente numa parede que não é terreno natural
-	 * (ou seja, uma construção) por ~1 segundo, ele explode.
-	 */
 	private void tickTntZombies(ServerLevel level) {
 		for (Flag flag : flags) {
 			Raid raid = flag.raid;
@@ -418,7 +395,7 @@ public final class DefenseManager {
 		return false;
 	}
 
-	// ------------------------------------------------------------------ fim da invasão
+
 
 	private void finishSuccess(ServerLevel level, Flag flag, boolean atDawn) {
 		Raid raid = flag.raid;
@@ -463,7 +440,6 @@ public final class DefenseManager {
 		raid.alive.clear();
 	}
 
-	// ------------------------------------------------------------------ spawn
 
 	private boolean spawnMob(ServerLevel level, Flag flag, Raid raid, RaidComposer.Spawn spawn) {
 		ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -494,12 +470,12 @@ public final class DefenseManager {
 
 			boolean zombieLike = type == EntityType.ZOMBIE || type == EntityType.HUSK;
 			if (!zombieLike) {
-				// dá o equipamento padrão (arco do esqueleto, besta do pillager...)
+
 				mob.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
 			}
 			RaidComposer.prepare(mob, spawn, raid.night);
 
-			// registra ANTES de adicionar ao mundo, senão o evento de carregamento o descartaria
+
 			raid.alive.add(mob.getUUID());
 			tracked.add(mob.getUUID());
 			level.addFreshEntity(mob);
@@ -508,7 +484,7 @@ public final class DefenseManager {
 		return false;
 	}
 
-	// ------------------------------------------------------------------ utilidades
+
 
 	private List<ServerPlayer> playersNear(ServerLevel level, BlockPos pos, double range) {
 		List<ServerPlayer> result = new ArrayList<>();
