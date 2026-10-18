@@ -9,13 +9,6 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.Predicate;
 
-/**
- * /defesa status          - lista as bandeiras do mundo (qualquer jogador)
- * /defesa iniciar         - força a invasão agora na bandeira mais próxima (teste)
- * /defesa noite <n>       - define quantas noites a bandeira mais próxima já defendeu (teste)
- *
- * Os comandos de teste só funcionam no singleplayer/LAN ou pelo console do servidor.
- */
 public final class DefenseCommands {
 	private static final Predicate<CommandSourceStack> DEBUG_ALLOWED =
 			source -> source.getEntity() == null || source.getServer().isSingleplayer();
